@@ -1,0 +1,352 @@
+#include <jni.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <iostream>
+#include <cmath>
+#include <chrono>
+#include <ctime>
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <list>
+#include <cfloat>
+#include <vector>
+#include <string.h>
+#include <pthread.h>
+#include <thread>
+#include <cstring>
+#include <jni.h>
+#include <unistd.h>
+#include <fstream>
+#include <iostream>
+#include <dlfcn.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include "Includes/stb_image.h"
+#include "Includes.h"
+#include "Includes/Logger.h"
+#include "Includes/obfuscate.h"
+#include "Includes/Utils.h"
+#include "KittyMemory/MemoryPatch.h"
+#include "includes/Dobby/dobby.h"
+#include "Includes/Vector2.h"
+#include "Includes/Vector3.h"
+//#include "Includes/Vector2.hpp"
+//#include "Includes/Vector3.hpp"
+//#include "Includes/Quaternion.hpp"
+#include "AutoHook/AutoHook.h"
+#include "Themes/Theme.h"
+#include "Font/autohelp.h"
+#include "Font/autofont.h"
+
+#include "Font/Iconcpp2.h"
+#include "Font/NotoSans.h"
+#include "Font/NotoSansBold.h"
+#include "Font/Roboto_Regular.h"
+#include "Includes/MonoString.h"
+#include "ImGui/ParticlesAnim.h"
+#include "Unity/il2cpp/il2cpp.h"
+#include "Includes/Color.h"
+#include "Includes/Rect.h"
+#include "Draw/ESP.h"
+#include "Font/OPPOSans-H.h"
+
+#define targetLibName OBFUSCATE("libunity.so")
+
+#include "Includes/Macros.h"
+
+//##############################################
+
+void (*Application$$OpenURL)(MonoString*);
+
+void OpenURL(const char *a) {
+    Application$$OpenURL(il2cpp_string_new(a));
+}
+
+//##############################################
+
+const Il2CppImage *GetImageToAssembly(const char *assembly) {
+    Il2CppDomain *domain = il2cpp_domain_get();
+    const Il2CppAssembly *domain_asm = il2cpp_domain_assembly_open(domain, assembly);
+    const Il2CppImage *asm_img = il2cpp_assembly_get_image(domain_asm);
+    return asm_img;
+}
+const Il2CppClass *GetClass(const char *assembly, const char *namespaze, const char *name) {
+    const Il2CppImage *asm_img = GetImageToAssembly(assembly);
+    const Il2CppClass *klass = il2cpp_class_from_name(asm_img, namespaze, name);
+    return klass;
+}
+void *FindMethod(string name_assembly, string name_space, string type_name, string method_name, size_t args = 0) {
+    const Il2CppImage *image = GetImageToAssembly(name_assembly.c_str());
+    if (!image) NULL;
+    const Il2CppClass *klass = il2cpp_class_from_name(image, name_space.c_str(), type_name.c_str());
+    if (!klass) NULL;
+    const MethodInfo *method = il2cpp_class_get_method_from_name(klass, method_name.c_str(), args);
+    if (!method) NULL;
+    return (void*)method->methodPointer;
+}
+
+//##############################################
+
+
+
+using namespace ImGui;
+
+int screenWidth = 0;
+int screenHeight = 0;
+bool g_Initialized = false;
+ImGuiWindow* g_window = NULL;
+
+int ScreenWidht;
+int ScreenHeight;
+
+bool(*this_ScreenResolution)(...);
+bool SetResolution(int width, int height, bool fullscreen)
+{
+    return true;
+}
+
+
+
+
+void *myPlayer = NULL;
+void *enemyPlayer = NULL;
+
+
+
+
+//---------
+
+float get_3D_Distance(float Self_x, float Self_y, float Self_z, float Object_x, float Object_y, float Object_z)
+    {
+        float x, y, z;
+        x = Self_x - Object_x;
+        y = Self_y - Object_y;
+        z = Self_z - Object_z;
+        return (float)(sqrt(x * x + y * y + z * z));
+    }
+
+	
+
+
+//---------------------------------------------------------------
+
+
+extern "C" {
+    JNIEXPORT void JNICALL Java_com_mycompany_application_GLES3JNIView_init(JNIEnv* env, jclass cls);
+    JNIEXPORT void JNICALL Java_com_mycompany_application_GLES3JNIView_resize(JNIEnv* env, jobject obj, jint width, jint height);
+    JNIEXPORT void JNICALL Java_com_mycompany_application_GLES3JNIView_step(JNIEnv* env, jobject obj);
+	JNIEXPORT void JNICALL Java_com_mycompany_application_GLES3JNIView_imgui_Shutdown(JNIEnv* env, jobject obj);
+	JNIEXPORT void JNICALL Java_com_mycompany_application_GLES3JNIView_MotionEventClick(JNIEnv* env, jobject obj,jboolean down,jfloat PosX,jfloat PosY);
+	JNIEXPORT jstring JNICALL Java_com_mycompany_application_GLES3JNIView_getWindowRect(JNIEnv *env, jobject thiz);
+	JNIEXPORT void JNICALL Java_com_mycompany_application_GLES3JNIView_real(JNIEnv* env, jobject obj, jint width, jint height);
+};
+
+
+//------------------CONFIGURAÇÃO DO MENU--------------------------------------
+
+
+
+
+ImFont *SmallFont;
+ImFont *BoldFont;
+ImFont* GetSmallFont();
+ImFont* GetBoldFont();
+void SetSmallFont(ImFont* font);
+void SetBoldFont(ImFont* font);
+
+ImFont *GetSmallFont() {
+    return SmallFont;
+    }
+
+    ImFont *GetBoldFont() {
+    return BoldFont;
+    }
+
+    void SetSmallFont(ImFont * font) {
+    SmallFont = font;
+    }
+
+    void SetBoldFont(ImFont * font) {
+    BoldFont = font;
+    }
+
+JNIEXPORT void JNICALL
+Java_com_mycompany_application_GLES3JNIView_init(JNIEnv* env, jclass cls) {
+
+    //SetUpImGuiContext
+    if(g_Initialized) return ;
+	IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+	
+	//Set ImGui Style
+    ImGui::StyleColorsDark();
+    
+    ImGuiStyle& style = ImGui::GetStyle();
+    static ImGuiStyle ref_saved_style;
+    style.WindowTitleAlign = ImVec2(0.500f, 0.500f);
+    style.FrameRounding = 2.00f;
+    style.WindowRounding = 4.0f;
+    //style.ChildRounding = 6.0f;
+    style.GrabRounding = 3.000f;
+    //style.ScrollbarRounding = 6.0f;
+    //ImGui::GetStyle().ScaleAllSizes(3.20f);
+    //style.ScrollbarSize = 20.0f;
+    style.TabRounding = 3.0f;
+	
+	//SetDarkRedTheme();
+	
+	 static const ImWchar icons_ranges[] = {0x0020, 0x00FF, 0x0100, 0x017F, 0xe000, 0xf538, 0xf7f9, 0xf8ff, 0x01, 0xffff, 0};
+	
+	 ImFontConfig font_cfg2;
+	 font_cfg2.SizePixels = 30.0f;
+	 font_cfg2.GlyphRanges = io.Fonts->GetGlyphRangesCyrillic();
+	ImFontConfig icons_config;
+        icons_config.GlyphMinAdvanceX = 29.0f;
+        icons_config.PixelSnapH = true;
+        icons_config.MergeMode = true;
+        icons_config.OversampleH = 2.5;
+        icons_config.OversampleV = 2.5;
+        icons_config.FontDataOwnedByAtlas = false; // if true it will try to free memory and fail
+       io.Fonts->AddFontFromMemoryTTF(Roboto_Regular, sizeof(Roboto_Regular), 30.0f, &font_cfg2);
+        GetSmallFont() != NULL;
+        io.Fonts->AddFontFromMemoryCompressedTTF(font_awesome_data, font_awesome_size, 30.0f, &icons_config, icons_ranges);
+
+	
+	
+	//ImFontConfig font_cfg2;
+        //font_cfg2.SizePixels = 30.0f;
+        font_cfg2.GlyphRanges = io.Fonts->GetGlyphRangesCyrillic();
+        
+        ImFontConfig font_cfg;
+        font_cfg.MergeMode = true;
+        static const ImWchar icon_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0x0};
+        io.Fonts->AddFontFromMemoryCompressedBase85TTF(FontAwesome6_compressed_data_base85, 25.0f, &font_cfg, icon_ranges);
+	
+	 //Font Padrão
+    //ImFontConfig font_cfg;
+    //font_cfg.SizePixels = 27.0f;
+    //io.Fonts->AddFontDefault(&font_cfg);
+    
+    // Setup Platform/Renderer backends
+    ImGui_ImplAndroid_Init();
+    ImGui_ImplOpenGL3_Init("#version 300 es");	
+	ImGui::GetStyle().ScaleAllSizes(4.0f);
+   
+    g_Initialized=true;
+}
+
+JNIEXPORT void JNICALL
+Java_com_mycompany_application_GLES3JNIView_resize(JNIEnv* env, jobject obj, jint width, jint height) {
+	screenWidth = (int) width;
+    screenHeight = (int) height;
+	glViewport(0, 0, width, height);
+	ImGuiIO &io = ImGui::GetIO();
+    io.ConfigWindowsMoveFromTitleBarOnly = true;
+    io.IniFilename = NULL;
+	ImGui::GetIO().DisplaySize = ImVec2((float)width, (float)height);
+}
+
+#include "Menu.h"
+
+//-------------------------------------------------------
+
+JNIEXPORT void JNICALL
+Java_com_mycompany_application_GLES3JNIView_step(JNIEnv* env, jobject obj) {
+    
+	ImGuiIO& io = ImGui::GetIO();
+	
+    static bool show_MainMenu_window = true;
+
+	//Start the Dear ImGui frame
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplAndroid_NewFrame(screenWidth,  screenHeight);//？Settings window
+    ImGui::NewFrame();
+    
+	if (show_MainMenu_window) {
+		BeginDraw();
+	}
+	
+    ImGui::Render();
+	glClear(GL_COLOR_BUFFER_BIT);
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+JNIEXPORT void JNICALL Java_com_mycompany_application_GLES3JNIView_imgui_Shutdown(JNIEnv* env, jobject obj){
+    if (!g_Initialized)
+        return;
+     // Cleanup
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplAndroid_Shutdown();
+    ImGui::DestroyContext();
+    g_Initialized=false;
+}
+
+JNIEXPORT void JNICALL Java_com_mycompany_application_GLES3JNIView_MotionEventClick(JNIEnv* env, jobject obj,jboolean down,jfloat PosX,jfloat PosY){
+	ImGuiIO & io = ImGui::GetIO();
+	io.MouseDown[0] = down;
+	io.MousePos = ImVec2(PosX,PosY);
+}
+
+JNIEXPORT jstring JNICALL Java_com_mycompany_application_GLES3JNIView_getWindowRect(JNIEnv *env, jobject thiz) {
+    //get drawing window
+    // TODO: accomplish getWindowSizePos()
+    char result[256]="0|0|0|0";
+    if(g_window){
+        sprintf(result,"%d|%d|%d|%d",(int)g_window->Pos.x,(int)g_window->Pos.y,(int)g_window->Size.x,(int)g_window->Size.y);
+    }
+    return env->NewStringUTF(result);
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_mycompany_application_DeviceInfo_sendDimensionsToNative(JNIEnv* env, jobject obj, jint width, jint height) {
+    ScreenWidht = width;
+    ScreenHeight = height;
+}
+
+
+
+//-----------------------------------------------
+
+
+void *hack_thread(void *) {
+    LOGI(OBFUSCATE("pthread created"));
+
+    do {
+        sleep(5);
+    } while (!isLibraryLoaded(targetLibName));
+	
+	
+	// SET YOUR SHADER HERE
+	
+	if (mlovinit()) {
+        setShader("unity_SHC"); //Shader names varies according to game.
+        LogShaders();
+        Wallhack();
+    }
+
+	
+	FunçõesHooks();
+
+
+#if defined(__aarch64__)	
+#else
+
+   
+#endif
+  
+    //pthread_exit(nullptr);
+    return nullptr;
+
+
+}
+
+__attribute__((constructor))
+void lib_main() {
+    pthread_t ptid;
+    pthread_create(&ptid, NULL, hack_thread, NULL);
+}

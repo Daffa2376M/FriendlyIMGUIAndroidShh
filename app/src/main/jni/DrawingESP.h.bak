@@ -1,0 +1,222 @@
+
+
+
+
+
+void* GetSkeletonInstance(void* player) {
+    if (player != NULL) {
+        void* Animator = *(void**)((uintptr_t)player + 0x78); // <-- CORRETO
+        if (Animator != NULL) {
+            return Animator;
+        }
+    }
+    return NULL; // Importante retornar NULL caso contrário
+}
+
+
+void* (*GetBoneTransform)(void* instance, int value);
+
+
+
+ImColor GetRainbowColor(float speed = 1.0f, float offset = 0.0f) {
+    float time = ImGui::GetTime() * speed + offset;
+    float r = sin(time + 0.0f) * 0.5f + 0.5f;
+    float g = sin(time + 2.0f) * 0.5f + 0.5f;
+    float b = sin(time + 4.0f) * 0.5f + 0.5f;
+    return ImColor(r, g, b, 1.0f);
+}
+
+
+//--------------------ESP CONFIG----------------------
+
+void DrawESP(ImDrawList* draw, int screenWidth, int screenHeight)
+{
+    if (Esp) {
+        auto bg = GetBackgroundDrawList();
+
+        if (espManager->enemies->empty()) {
+            return;
+        }
+
+        for (int i = 0; i < espManager->enemies->size(); i++) {
+            void* Player = (*espManager->enemies)[i]->object;
+            if (get_camera != nullptr) {
+                if (Player != nullptr) {
+            
+                        Vector3 position = get_position(getTransform(Player));
+                        Vector3 PosPlayer = WorldToScreenPoint(get_camera(), Vector3(position.x, position.y + 2.00f, position.z));
+                        Vector3 NewPosPlayer = WorldToScreenPoint(get_camera(), Vector3(position.x, position.y - 0.30f, position.z));
+
+                        if (NewPosPlayer.z < 0) continue;
+
+                        float boxHeight = abs(screenHeight - NewPosPlayer.y - (screenHeight - PosPlayer.y));
+                        float boxWidth = boxHeight * 0.6f;
+
+                        Rect rect = Rect(PosPlayer.x - (boxWidth / 2),
+                                         screenHeight - PosPlayer.y,
+                                         boxWidth, boxHeight);
+
+               
+                        if (ESPLine) {
+                            ESP::DrawLine(ImVec2(screenWidth / 2.0, screenHeight / 15.0f),
+                                          ImVec2(PosPlayer.x, screenHeight - PosPlayer.y),
+                                          ESPLineColor, ESPLineSize);
+                        }
+						
+						
+                        
+                        if (ESPBox) {
+                            float width = ((screenHeight - NewPosPlayer.y) - (screenHeight - PosPlayer.y)) / 4;
+                            float height = screenHeight - PosPlayer.y - (screenHeight - NewPosPlayer.y);
+
+                            Rect rect = Rect(
+                                PosPlayer.x - width,
+                                screenHeight - NewPosPlayer.y,
+                                width * 2,
+                                height);
+
+                            ESP::DrawBox(rect, ESPBoxColor, ESPBoxSize);
+                        }
+
+                        if (ESPGradientBox) {
+                            getDrawList()->AddRectFilled(ImVec2(rect.x, rect.y),
+                                                         ImVec2(rect.x + rect.w, rect.y + rect.h),
+                                                         Esp_Filed,
+                                                         visual_esp_box_filedth);
+                        }
+
+
+                       if (ESPDistance) {
+						   
+                           Vector3 playerPosition = get_position(getTransform(myPlayer));
+                           Vector3 enemyPosition = get_position(getTransform(Player));
+
+                           float distance = get_3D_Distance(playerPosition.x, playerPosition.y, playerPosition.z, enemyPosition.x, enemyPosition.y, enemyPosition.z);
+                           std::string distStr = std::to_string((int)distance) + "m";
+                           ImVec2 textPosition = ImVec2(
+                           rect.x + (rect.w / 2) - (CalcTextSize(distStr.c_str()).x / 2),
+                           rect.y - 15 // Posicionado acima do box (ajuste se necessário)
+                           );
+                           // Escala do texto (opcional, baseado em profundidade)
+                           float scale = 280.0f / NewPosPlayer.z;
+
+                           bg->AddText(
+                           GetFont(),
+                           scale,
+                           textPosition,
+                           GetColorU32(*(ImVec4 *)EspDistanceColor),
+                           distStr.c_str()
+                              );
+                           }
+
+
+                        if (ESPObject) {
+                            ESP::DrawCircleFilled(ImVec2(screenWidth / 2.0, screenHeight / 15.0f), 31.0f,
+                                                  ImVec4(255, 255, 255, 255));
+
+                            std::string AllPlayers = std::to_string((int32_t)espManager->enemies->size());
+                            ESP::DrawText(30.0f, ImVec2(screenWidth / 2.02, screenHeight / 20.07f),
+                                          ImVec4(0, 0, 0, 255), AllPlayers.c_str());
+                        }
+						
+						
+						if (ESPSkeleton) {
+    void* PlayerSkeleton = GetSkeletonInstance(Player);
+    if (PlayerSkeleton != NULL) {
+        int BoneIndices[][2] = {
+            {0, 7}, {7, 8}, {8, 9}, {9, 10},        // Coluna e cabeça
+            {9, 11}, {11, 13}, {13, 15},            // Braço esquerdo
+            {9, 12}, {12, 14}, {14, 16},            // Braço direito
+            {0, 1}, {1, 3}, {3, 5},                 // Perna esquerda
+            {0, 2}, {2, 4}, {4, 6}                  // Perna direita
+        };
+
+        
+        for (int i = 0; i < sizeof(BoneIndices) / sizeof(BoneIndices[0]); i++) {
+            int boneStart = BoneIndices[i][0];
+            int boneEnd = BoneIndices[i][1];
+
+            Vector3 start = WorldToScreenPoint(get_camera(), get_position(getTransform(GetBoneTransform(PlayerSkeleton, boneStart))));
+            Vector3 end = WorldToScreenPoint(get_camera(), get_position(getTransform(GetBoneTransform(PlayerSkeleton, boneEnd))));
+
+            draw->AddLine(ImVec2(start.x, screenHeight - start.y), ImVec2(end.x, screenHeight - end.y), IM_COL32(255, 255, 255, 255), 2.0f);
+        }
+    }
+}
+						
+						
+						
+                    }
+                }
+        }
+    }
+}
+
+
+//----------------ESP OFFLINE----------------------------
+
+
+
+
+//--------------------PLAYER UPDATE----------------------------
+
+void (*old_WeaponUpdate)(...);
+void new_WeaponUpdate(void* player) {
+
+    if (player != nullptr) {
+       
+    }
+
+    return old_WeaponUpdate(player);
+}
+
+
+
+
+
+
+
+
+
+void (*old_PlayerUpdate)(...);
+void PlayerUpdate(void* player) {
+
+    if (player != nullptr) {
+		
+        
+        if (Esp) {
+            ScreenWidht = get_width();
+            ScreenHeight = get_height();
+            espManager->tryAddEnemy(player);
+            }
+    }
+
+    return old_PlayerUpdate(player);
+}
+
+
+//------------------ONDESTROY-------------------
+
+/*
+void (*old_Player_OnDestroy)(...);
+void Player_OnDestroy(void* player) {
+    if (player != NULL) {
+        old_Player_OnDestroy;
+        players.erase(remove(players.begin(), players.end(), player), players.end());
+    }
+}
+
+*/
+
+
+void (*old_PlayerOnDestroy)(...);
+void PlayerOnDestroy(void *player) {
+    if (player != NULL) {
+        old_PlayerOnDestroy(player);
+        espManager->removeEnemyGivenObject(player);
+    }
+}
+
+
+//----------------------------------------------
+

@@ -1,0 +1,80 @@
+
+
+#define LIB OBFUSCATE("libil2cpp.so")
+//#define LIBU OBFUSCATE("libunity.so")
+#define DHOOK(offseet, ptr, orig) DobbyHook((void*)getAbsoluteAddress("libil2cpp.so", offseet), (void*)ptr, (void**)&orig)
+#define gAA getAbsoluteAddress
+
+int glHeight;
+int glWidth;
+static int Hell =1;
+
+bool SpamChat = false;
+const char * chat = "t.me/fwdhvh";
+bool damagee = false;
+bool fireRatee = false;
+bool Esp = false;
+bool Esp1 = false;
+bool ESPLine = false;
+bool ESPSkeleton = false;
+bool ESPBox = false;
+bool ESPBox1 = false;
+bool ESPGradientBox = false;
+bool ESPName = false;
+bool ESPHealth = false;
+bool ESPHealth1 = false;
+bool ESPDistance = false;
+bool ESPCount = false;
+bool ESPObject = false;
+bool ESPObject1 = false;
+
+
+// Functions
+
+
+
+DWORD get_heights, get_widths, fireRate, bulletsLeft, ammo, damage; 
+
+int (*get_height)();
+int (*get_width)();
+
+
+
+
+ImU32 FovColor = IM_COL32(255, 255, 255, 255); // Cor branca como exemplo.
+
+ImVec4 ESPLineColor = ImVec4(255.0f, 255.0f, 255.0f, 255.00f);
+ImVec4 ESPLineColor1 = ImVec4(255.0f, 0.0f, 0.0f, 255.00f);
+ImVec4 ESPBoxColor = ImVec4(255.0f, 255.0f, 255.0f, 255.00f);
+ImVec4 ESPHealthColor = ImVec4(255.0f, 255.0f, 255.0f, 255.00f);
+float ESPLineSize = 1.5f,ESPBoxSize = 1.5f;
+
+float EspDistanceColor[4] = {1, 1, 1, 1};
+
+float visual_esp_box_filed = 1, visual_esp_box_filedth = 1;
+ImColor Esp_Filed = ImColor(0, 0, 0, 150); // Preto com alpha 150
+ImColor Esp_He= ImColor(4,255,0,255);
+ImColor Esp_Text = ImColor(255,255,255,229);
+
+
+
+void *instanceBtn;
+
+bool drawBehindMenu = true;
+
+ImDrawList* getDrawList(){
+    ImDrawList *drawList;
+    if(drawBehindMenu){
+        drawList = ImGui::GetBackgroundDrawList();
+    } else {
+        drawList = ImGui::GetForegroundDrawList();
+    }
+    return drawList;
+}
+
+
+struct My_Patches {
+
+    MemoryPatch  IsServer, LockAim;
+
+} hexPatches;

@@ -1,0 +1,214 @@
+
+
+#include "Variable.h"
+#include "Draw/hooks.h"
+#include "Draw/ESPManager.h"
+ESPManager *espManager;
+#include "DrawingESP.h"
+#include "Functions.h"
+#include "Chams.h"
+
+
+//------------------------MENU IMGUI-------------------------------
+
+void BeginDraw() {
+        
+
+        ImGuiIO & io = ImGui::GetIO();
+		
+		DrawESP(ImGui::GetBackgroundDrawList(), ScreenWidht, ScreenHeight);
+		
+		
+        const ImGuiViewport* main_viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + 100, main_viewport->WorkPos.y + 220), ImGuiCond_FirstUseEver);
+  //  ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + 250, main_viewport->WorkPos.y + 20), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(500, 350), ImGuiCond_FirstUseEver);
+
+    char buf[128];
+    sprintf(buf, "  ImGui Unity | @TokyoModder");
+
+    if (ImGui::Begin(buf, 0, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
+        g_window = ImGui::GetCurrentWindow();
+
+        if (ImGui::Button("ESP", ImVec2(140, 50))) Hell = 1;
+        ImGui::SameLine();
+        if (ImGui::Button("AIM", ImVec2(140, 50))) Hell = 2;
+        ImGui::SameLine();
+        if (ImGui::Button("WEAPON", ImVec2(140, 50))) Hell = 3;
+        
+
+        if (Hell == 1) {
+            ImGui::Spacing();
+            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 255, 0, 255));
+            ImGui::Text(" TokyoModz          FPS : %.2f", io.Framerate);
+       //     ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "SetCurrency raw address: 0x%lx", getAddr::purchase);
+            ImGui::PopStyleColor();
+
+            ImGui::Separator();
+
+            if (ImGui::BeginTable("split", 3)) {
+                ImGui::TableNextColumn();
+                ImGui::Checkbox("ESP", &Esp);
+                ImGui::TableNextColumn();
+                ImGui::Checkbox("Line", &ESPLine);
+                ImGui::TableNextColumn();
+                ImGui::Checkbox("Box", &ESPBox);
+                
+                
+                
+        //       ImGui::Checkbox("Enable Infinite Currency", &var.InfiniteCurrency);
+
+                
+                
+                
+                
+                ImGui::EndTable();
+            }
+
+            ImGui::Separator();
+            ImGui::Text(" STATUS -");
+            ImGui::SameLine();
+            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));
+            ImGui::Text(" SAFE (PLAY SAFE)");
+            ImGui::PopStyleColor();
+        }
+
+        if (Hell == 2) {
+        
+        	ImGui::Spacing();
+            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 255, 0, 255));
+            ImGui::Text(" TokyoModz          FPS : %.2f", io.Framerate);
+       //     ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "SetCurrency raw address: 0x%lx", getAddr::purchase);
+            ImGui::PopStyleColor();
+
+            ImGui::Separator();
+
+            if (ImGui::BeginTable("split", 3)) {
+                ImGui::TableNextColumn();
+                ImGui::Checkbox("Aimbot 2.0", &Esp);
+            /*    ImGui::TableNextColumn();
+                ImGui::Checkbox("Line", &ESPLine);
+                ImGui::TableNextColumn();
+                ImGui::Checkbox("Box", &ESPBox);
+                */
+                
+                
+        //       ImGui::Checkbox("Enable Infinite Currency", &var.InfiniteCurrency);
+
+                
+                
+                
+                
+                ImGui::EndTable();
+                }
+        
+            
+            
+        }
+        if (Hell == 3) {
+			ImGui::Spacing();
+            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 255, 0, 255));
+            ImGui::Text(" TokyoModz          FPS : %.2f", io.Framerate);
+       //     ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "SetCurrency raw address: 0x%lx", getAddr::purchase);
+            ImGui::PopStyleColor();
+
+            ImGui::Separator();
+
+            if (ImGui::BeginTable("split", 3)) {
+                ImGui::TableNextColumn();
+                ImGui::Checkbox("Max Ammo", &bulletsLeft);
+                ImGui::TableNextColumn();
+                ImGui::Checkbox("Fire Rate", &fireRate);
+                ImGui::TableNextColumn();
+                ImGui::Checkbox("One Hit", &ESPBox);
+                
+                
+                
+        //       ImGui::Checkbox("Enable Infinite Currency", &var.InfiniteCurrency);
+
+                
+                
+                
+                
+                ImGui::EndTable();
+                }
+   			} 				 
+        ImGui::End();
+      }
+  }
+
+//---------------------------------------------------------------
+
+
+
+
+
+void FunçõesHooks() {
+	
+	espManager = new ESPManager();
+	
+	
+	//OTHER GAMES OFFSET DIFFERENT 
+	
+	//FIND YOURSELF.  
+	
+	auto WeaponBehavior = new LoadClass("", OBFUSCATE("WeaponBehavior"));
+     bulletsLeft = WeaponBehavior->GetFieldOffset(OBFUSCATE("bulletsLeft"));
+     fireRate = WeaponBehavior->GetFieldOffset(OBFUSCATE("fireRate"));
+     damage = WeaponBehavior->GetFieldOffset(OBFUSCATE("damage"));
+     ammo = WeaponBehavior->GetFieldOffset(OBFUSCATE("ammo"));
+    uintptr_t Update3 = WeaponBehavior->GetMethodOffsetByName(OBFUSCATE("Update"), 0);
+    HOOK_AU((void *)Update3, (void *)new_WeaponUpdate, old_WeaponUpdate);
+    
+	
+	
+	
+	
+	
+	
+	
+	auto TacticalAI = new LoadClass("TacticalAI", OBFUSCATE("BaseScript"));
+  //  isHealth = TacticalAI->GetFieldOffset(OBFUSCATE("HEALTH"));
+    DWORD UpDate = TacticalAI->GetMethodOffsetByName(OBFUSCATE("Update"), 0);
+    DWORD OnDestroy = TacticalAI->GetMethodOffsetByName(OBFUSCATE("OnDisable"), 0);
+    HOOK_AU((void *)UpDate, (void *)PlayerUpdate, old_PlayerUpdate);
+    HOOK_AU((void *)OnDestroy, (void *)PlayerOnDestroy, old_PlayerOnDestroy);
+	/*
+    
+    
+	*/
+	/*
+	auto Animatorr = new LoadClass("UnityEngine", OBFUSCATE("Animator"));
+	isBone = Animatorr->GetMethodOffsetByName(OBFUSCATE("GetBoneTransform"), 1);
+	
+	GetBoneTransform = (void*(*)(void*,int))isBone;
+
+	*/
+	
+	//DO NOT CHANGE HERE
+	
+    auto Screen = new LoadClass("UnityEngine", OBFUSCATE("Screen"));
+	get_heights = Screen->GetMethodOffsetByName(OBFUSCATE("get_height"), 0);
+	get_widths = Screen->GetMethodOffsetByName(OBFUSCATE("get_width"), 0);
+    //DWORD ThisScreen = Screen->GetMethodOffsetByName(OBFUSCATE("SetResolution"), 3);
+    //HOOK_AU((void *)ThisScreen, (void *)SetResolution, this_ScreenResolution);
+	
+	auto Trans = new LoadClass("UnityEngine", OBFUSCATE("Transform"));
+    auto Comp = new LoadClass("UnityEngine", OBFUSCATE("Component"));
+    auto Cam = new LoadClass("UnityEngine", OBFUSCATE("Camera"));
+	
+	
+	//SetLocalScale = (void (*)(void*, Vector3)) Trans->GetMethodOffsetByName(OBFUSCATE("set_localScale_Injected"), 1);
+    getAddr::Position = Trans->GetMethodOffsetByName(OBFUSCATE("get_position_Injected"), 1);
+    getAddr::SetPosition = Trans->GetMethodOffsetByName(OBFUSCATE("set_position_Injected"), 1);
+    getAddr::Transform = Comp->GetMethodOffsetByName(OBFUSCATE("get_transform"), 0);
+    getAddr::WorldTScrn = Cam->GetMethodOffsetByName(OBFUSCATE("WorldToScreenPoint_Injected"), 3);
+    getAddr::Camera = Cam->GetMethodOffsetByName(OBFUSCATE("get_main"), 0);
+	
+	
+	get_height = (int(*)())get_heights;
+	
+	get_width = (int(*)())get_widths;
+	
+
+}

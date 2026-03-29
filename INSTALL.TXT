@@ -1,0 +1,13 @@
+
+
+
+
+
+     ADD LIB 
+     
+     ADD CLASSDEX 
+     
+     ADD IN CLASSDEX 👇👇
+     
+     
+     invoke-static {p0}, Lcom/mycompany/application/MainActivity;->Start(Landroid/content/Context;)V

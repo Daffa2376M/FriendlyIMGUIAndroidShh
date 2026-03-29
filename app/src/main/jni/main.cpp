@@ -38,6 +38,8 @@
 
 using namespace ImGui;
 
+// NOTE: Simple comment added for branch workflow verification.
+
 int screenWidth = 0;
 int screenHeight = 0;
 int ScreenWidht = 0;
